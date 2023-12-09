@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	int buffer_size = 18200;
+	int buffer_size = 4800;
 	int height = 800;
 	int width = 1200;
 	int fps = 60;
