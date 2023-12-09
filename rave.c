@@ -8,31 +8,51 @@
 #include "raylib.h"
 
 uint64_t *g_frames;
+uint64_t *g_frames_d;
+uint64_t *render_lock = NULL;
+uint64_t *callback_lock = NULL;
 unsigned int cap;
 int g_frames_count = 0;
 
 void callback(void *buffer, unsigned int frames)
 {
+	if (frames == 0)
+		return;
+
+	while (render_lock == g_frames_d);
+	callback_lock = g_frames_d;
+
 	if (cap - g_frames_count >= frames) {
-		memcpy(g_frames + g_frames_count, buffer, frames * sizeof(uint64_t));
+		memcpy(g_frames_d, g_frames, g_frames_count * sizeof(uint64_t));
+		memcpy(g_frames_d + g_frames_count, buffer, frames * sizeof(uint64_t));
 		g_frames_count += frames;
 	} else if (cap >= frames) {
-		memmove(g_frames, g_frames + frames, (cap - frames) * sizeof(uint64_t));
-		memcpy(g_frames + (cap - frames), buffer, sizeof(uint64_t) * frames);
+		memcpy(g_frames_d, g_frames + frames, (cap - frames) * sizeof(uint64_t));
+		memcpy(g_frames_d + (cap - frames), buffer, frames * sizeof(uint64_t));
 	} else {
-		memcpy(g_frames, buffer, sizeof(uint64_t) * cap);
+		memcpy(g_frames_d, buffer, cap * sizeof(uint64_t));
 		g_frames_count = cap;
 	}
+
+	uint64_t *tmp = g_frames;
+	g_frames = g_frames_d;
+	g_frames_d = tmp;
+
+	callback_lock = NULL;
 }
 
-void render()
+void render(uint64_t *buf, int fcount)
 {
 	int width = GetRenderWidth();
 	int height = GetRenderHeight();
 
-	float w = (((float) width) / (float) g_frames_count);
-	for (int i = 0; i < g_frames_count; i++) {
-		float sample = ((float *) g_frames)[i];
+	float w = (((float) width) / (float) fcount);
+
+	while (callback_lock == buf);
+	render_lock = buf;
+
+	for (int i = 0; i < fcount; i++) {
+		float sample = ((float *) buf)[i];
 
 		int h = (int) (((float) height / 2) * sample);
 
@@ -43,6 +63,8 @@ void render()
 			DrawRectangle(i * w, height / 2 + h - (h / 5 + 1), 1, h / 5 + 1, BLACK);
 		}
 	}
+
+	render_lock = NULL;
 }
 
 void usage()
@@ -95,9 +117,12 @@ int main(int argc, char *argv[])
 
 	cap = buffer_size;
 	g_frames = alloca(buffer_size * sizeof(uint64_t));
+	g_frames_d = alloca(buffer_size * sizeof(uint64_t));
 
-	for (unsigned int i = 0; i < cap; i++)
+	for (unsigned int i = 0; i < cap; i++) {
 		g_frames[i] = 0;
+		g_frames_d[i] = 0;
+	}
 
 	InitAudioDevice();
 	Music s = LoadMusicStream(argv[1]);
@@ -116,7 +141,7 @@ int main(int argc, char *argv[])
 			ClearBackground(WHITE);
 
 			if (g_frames_count != 0)
-				render();
+				render(g_frames, g_frames_count);
 
 			EndDrawing();
 		}
