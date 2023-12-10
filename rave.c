@@ -51,7 +51,7 @@ void render(uint64_t *buf, int fcount)
 	while (callback_lock == buf);
 	render_lock = buf;
 
-	for (int i = 0; i < fcount; i++) {
+	for (int i = 0; i < (fcount * 2); i ++) {
 		float sample = ((float *) buf)[i];
 
 		int h = (int) (((float) height / 2) * sample);
