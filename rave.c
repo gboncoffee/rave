@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <alloca.h>
 #include <math.h>
 #include "raylib.h"
 
@@ -112,12 +111,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
 	InitWindow(width, height, "Raylib Audio Visualizer");
 	SetTargetFPS(fps);
 
 	cap = buffer_size;
-	g_frames = alloca(buffer_size * sizeof(uint64_t));
-	g_frames_d = alloca(buffer_size * sizeof(uint64_t));
+	g_frames = malloc(buffer_size * sizeof(uint64_t));
+	g_frames_d = malloc(buffer_size * sizeof(uint64_t));
 
 	for (unsigned int i = 0; i < cap; i++) {
 		g_frames[i] = 0;
@@ -148,6 +148,9 @@ int main(int argc, char *argv[])
 	}
 	DetachAudioStreamProcessor(s.stream, callback);
 	StopMusicStream(s);
+
+	free(g_frames);
+	free(g_frames_d);
 
 	return 0;
 }

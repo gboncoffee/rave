@@ -2,7 +2,10 @@
 
 set -xe
 
-CLIBS="libraylib.a -lGL -lm -lpthread -ldl -lrt -lX11"
+CC=gcc
+command -v tcc > /dev/null && CC=tcc
+
+CLIBS="-lX11 -lGL -lm -lpthread -ldl -lrt libraylib.a"
 CFLAGS="-Wall -Wextra -pedantic -std=c99"
 
-cc rave.c $CLIBS $CFLAGS -o rave
+$CC rave.c $CLIBS $CFLAGS -o rave
