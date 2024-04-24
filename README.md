@@ -2,9 +2,6 @@
 
 Simple [raylib](https://github.com/raysan5/raylib) based audio visualizer.
 
-To compile it, place `libraylib.a` and `raylib.h` in the repo folder an run
-`./build.sh`.
-
 Usage: `rave <music file>`
 
 Options: `[-w<width in pixels>]`, `[-h<height in pixels>]`, `[-f<fps>]`,
