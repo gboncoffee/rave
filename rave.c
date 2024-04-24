@@ -3,8 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <math.h>
-#include "raylib.h"
+#include <raylib.h>
 
 uint64_t *g_frames;
 uint64_t *g_frames_d;
