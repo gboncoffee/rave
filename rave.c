@@ -12,6 +12,20 @@ uint64_t *callback_lock = NULL;
 unsigned int cap;
 int g_frames_count = 0;
 
+/* Dracula gray */
+/* static const Color background = CLITERAL(Color) {0x28, 0x2A, 0x36, 0xff}; */
+/* White */
+/* static const Color background = CLITERAL(Color) {0xff, 0xff, 0xff, 0xff}; */
+/* Black */
+static const Color background = CLITERAL(Color) {0x00, 0x00, 0x00, 0xff};
+
+/* White */
+/* static const Color foreground = CLITERAL(Color) {0xff, 0xff, 0xff, 0xff}; */
+/* Green */
+static const Color foreground = CLITERAL(Color) {0x00, 0xff, 0x00, 0xff};
+/* Dracula green */
+/* static const Color foreground = CLITERAL(Color) {0x50, 0xFA, 0x7B, 0xff}; */
+
 void callback(void *buffer, unsigned int frames)
 {
 	if (frames == 0)
@@ -55,10 +69,10 @@ void render(uint64_t *buf, int fcount)
 		int h = (int) (((float) height / 2) * sample);
 
 		if (sample > 0) {
-			DrawRectangle(i * w, height / 2 - h, 1, h / 5 + 1, BLACK);
+			DrawRectangle(i * w, height / 2 - h, 1, h / 5 + 1, foreground);
 		} else if (sample < 0) {
 			h = -h;
-			DrawRectangle(i * w, height / 2 + h - (h / 5 + 1), 1, h / 5 + 1, BLACK);
+			DrawRectangle(i * w, height / 2 + h - (h / 5 + 1), 1, h / 5 + 1, foreground);
 		}
 	}
 
@@ -137,7 +151,7 @@ int main(int argc, char *argv[])
 			CloseWindow();
 		} else {
 			BeginDrawing();
-			ClearBackground(WHITE);
+			ClearBackground(background);
 
 			if (g_frames_count != 0)
 				render(g_frames, g_frames_count);
