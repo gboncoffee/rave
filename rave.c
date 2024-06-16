@@ -13,18 +13,18 @@ unsigned int cap;
 int g_frames_count = 0;
 
 /* Dracula gray */
-/* static const Color background = CLITERAL(Color) {0x28, 0x2A, 0x36, 0xff}; */
+static const Color background = CLITERAL(Color) {0x28, 0x2A, 0x36, 0xff};
 /* White */
 /* static const Color background = CLITERAL(Color) {0xff, 0xff, 0xff, 0xff}; */
 /* Black */
-static const Color background = CLITERAL(Color) {0x00, 0x00, 0x00, 0xff};
+/* static const Color background = CLITERAL(Color) {0x00, 0x00, 0x00, 0xff}; */
 
 /* White */
 /* static const Color foreground = CLITERAL(Color) {0xff, 0xff, 0xff, 0xff}; */
 /* Green */
-static const Color foreground = CLITERAL(Color) {0x00, 0xff, 0x00, 0xff};
+/* static const Color foreground = CLITERAL(Color) {0x00, 0xff, 0x00, 0xff}; */
 /* Dracula green */
-/* static const Color foreground = CLITERAL(Color) {0x50, 0xFA, 0x7B, 0xff}; */
+static const Color foreground = CLITERAL(Color) {0x50, 0xFA, 0x7B, 0xff};
 
 void callback(void *buffer, unsigned int frames)
 {

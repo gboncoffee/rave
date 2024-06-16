@@ -2,3 +2,4 @@ libraylib.a
 raylib.h
 *.mp3
 rave
+.cache/
