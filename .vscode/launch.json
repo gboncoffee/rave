@@ -11,6 +11,14 @@
 			"program": "${workspaceFolder}/rave",
 			"args": ["bad-apple.mp3"],
 			"cwd": "${workspaceFolder}"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug (Drag&Drop)",
+			"program": "${workspaceFolder}/rave",
+			"args": [],
+			"cwd": "${workspaceFolder}"
 		}
 	]
 }

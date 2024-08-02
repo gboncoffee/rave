@@ -1,9 +1,9 @@
-#include <stdio.h>
 #include <assert.h>
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <raylib.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 uint64_t *g_frames;
 uint64_t *g_frames_d;
@@ -12,158 +12,170 @@ uint64_t *callback_lock = NULL;
 unsigned int cap;
 int g_frames_count = 0;
 
-/* Dracula gray */
-static const Color background = CLITERAL(Color) {0x28, 0x2A, 0x36, 0xff};
-/* White */
-/* static const Color background = CLITERAL(Color) {0xff, 0xff, 0xff, 0xff}; */
 /* Black */
-/* static const Color background = CLITERAL(Color) {0x00, 0x00, 0x00, 0xff}; */
+static const Color background = CLITERAL(Color){0x00, 0x00, 0x00, 0xff};
 
 /* White */
-/* static const Color foreground = CLITERAL(Color) {0xff, 0xff, 0xff, 0xff}; */
-/* Green */
-/* static const Color foreground = CLITERAL(Color) {0x00, 0xff, 0x00, 0xff}; */
-/* Dracula green */
-static const Color foreground = CLITERAL(Color) {0x50, 0xFA, 0x7B, 0xff};
+static const Color foreground = CLITERAL(Color){0xff, 0xff, 0xff, 0xff};
 
-void callback(void *buffer, unsigned int frames)
-{
-	if (frames == 0)
-		return;
+void callback(void *buffer, unsigned int frames) {
+  if (frames == 0) return;
 
-	while (render_lock == g_frames_d);
-	callback_lock = g_frames_d;
+  while (render_lock == g_frames_d);
+  callback_lock = g_frames_d;
 
-	if (cap - g_frames_count >= frames) {
-		memcpy(g_frames_d, g_frames, g_frames_count * sizeof(uint64_t));
-		memcpy(g_frames_d + g_frames_count, buffer, frames * sizeof(uint64_t));
-		g_frames_count += frames;
-	} else if (cap >= frames) {
-		memcpy(g_frames_d, g_frames + frames, (cap - frames) * sizeof(uint64_t));
-		memcpy(g_frames_d + (cap - frames), buffer, frames * sizeof(uint64_t));
-	} else {
-		memcpy(g_frames_d, buffer, cap * sizeof(uint64_t));
-		g_frames_count = cap;
-	}
+  if (cap - g_frames_count >= frames) {
+    memcpy(g_frames_d, g_frames, g_frames_count * sizeof(uint64_t));
+    memcpy(g_frames_d + g_frames_count, buffer, frames * sizeof(uint64_t));
+    g_frames_count += frames;
+  } else if (cap >= frames) {
+    memcpy(g_frames_d, g_frames + frames, (cap - frames) * sizeof(uint64_t));
+    memcpy(g_frames_d + (cap - frames), buffer, frames * sizeof(uint64_t));
+  } else {
+    memcpy(g_frames_d, buffer, cap * sizeof(uint64_t));
+    g_frames_count = cap;
+  }
 
-	uint64_t *tmp = g_frames;
-	g_frames = g_frames_d;
-	g_frames_d = tmp;
+  uint64_t *tmp = g_frames;
+  g_frames = g_frames_d;
+  g_frames_d = tmp;
 
-	callback_lock = NULL;
+  callback_lock = NULL;
 }
 
-void render(uint64_t *buf, int fcount)
-{
-	int width = GetRenderWidth();
-	int height = GetRenderHeight();
+void render(uint64_t *buf, int fcount) {
+  int width = GetRenderWidth();
+  int height = GetRenderHeight();
 
-	float w = (((float) width) / (float) fcount);
+  float w = (((float)width) / (float)fcount);
 
-	while (callback_lock == buf);
-	render_lock = buf;
+  while (callback_lock == buf);
+  render_lock = buf;
 
-	for (int i = 0; i < (fcount * 2); i ++) {
-		float sample = ((float *) buf)[i];
+  for (int i = 0; i < (fcount * 2); i++) {
+    float sample = ((float *)buf)[i];
 
-		int h = (int) (((float) height / 2) * sample);
+    int h = (int)(((float)height / 2) * sample);
 
-		if (sample > 0) {
-			DrawRectangle(i * w, height / 2 - h, 1, h / 5 + 1, foreground);
-		} else if (sample < 0) {
-			h = -h;
-			DrawRectangle(i * w, height / 2 + h - (h / 5 + 1), 1, h / 5 + 1, foreground);
-		}
-	}
+    if (sample > 0) {
+      DrawRectangle(i * w, height / 2 - h, 1, h / 5 + 1, foreground);
+    } else if (sample < 0) {
+      h = -h;
+      DrawRectangle(i * w, height / 2 + h - (h / 5 + 1), 1, h / 5 + 1,
+                    foreground);
+    }
+  }
 
-	render_lock = NULL;
+  render_lock = NULL;
 }
 
-void usage()
-{
-	printf("usage: rave <music file> [-h<height in pixels>] [-w<width in pixels>] [-b<buffer size in long words>] [-f<fps>]\n");
+void usage(void) {
+  printf(
+      "usage: rave [music file] [-h<height in pixels>] [-w<width in pixels>] "
+      "[-b<buffer size in long words>] [-f<fps>]\n");
+  printf("If no music file is provided, waits for drag&drop.\n");
 }
 
-int main(int argc, char *argv[])
-{
-	if (argc < 2) {
-		usage();
-		return 1;
-	}
+char *drag_and_drop(void) {
+  while (!WindowShouldClose()) {
+    if (IsFileDropped()) return LoadDroppedFiles().paths[0];
 
-	int buffer_size = 4800;
-	int height = 800;
-	int width = 1200;
-	int fps = 60;
-	for (int i = 2; i < argc; i++) {
-		if (argv[i][0] == '-' && strlen(argv[i]) > 1) {
-			char d1, d2;
-			int *parse;
-			switch (argv[i][1]) {
-			case 'h':
-				parse = &height;
-				break;
-			case 'w':
-				parse = &width;
-				break;
-			case 'b':
-				parse = &buffer_size;
-				break;
-			case 'f':
-				parse = &fps;
-				break;
-			default:
-				usage();
-				return 1;
-			}
+		BeginDrawing();
 
-			if (sscanf(argv[i], "%c%c%d", &d1, &d2, parse) != 3) {
-				usage();
-				return 1;
-			}
-		}
-	}
+		ClearBackground(background);
+		DrawText("Drag&Drop a music file.", 0, 0, 45, foreground);
 
-	SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
-	InitWindow(width, height, "Raylib Audio Visualizer");
-	SetTargetFPS(fps);
+		EndDrawing();
+  }
 
-	cap = buffer_size;
-	g_frames = malloc(buffer_size * sizeof(uint64_t));
-	g_frames_d = malloc(buffer_size * sizeof(uint64_t));
+  return NULL;
+}
 
-	for (unsigned int i = 0; i < cap; i++) {
-		g_frames[i] = 0;
-		g_frames_d[i] = 0;
-	}
+int main(int argc, char *argv[]) {
+  int buffer_size = 4800;
+  int height = 800;
+  int width = 1200;
+  int fps = 60;
+  char *music_file = NULL;
 
-	InitAudioDevice();
-	Music s = LoadMusicStream(argv[1]);
-	assert(s.stream.sampleSize == 32);
-	assert(s.stream.channels == 2);
-	PlayMusicStream(s);
-	AttachAudioStreamProcessor(s.stream, callback);
+  for (int i = 1; i < argc; i++) {
+    if (argv[i][0] == '-' && strlen(argv[i]) > 1) {
+      char d1, d2;
+      int *parse;
+      switch (argv[i][1]) {
+        case 'h':
+          parse = &height;
+          break;
+        case 'w':
+          parse = &width;
+          break;
+        case 'b':
+          parse = &buffer_size;
+          break;
+        case 'f':
+          parse = &fps;
+          break;
+        default:
+          usage();
+          return 1;
+      }
 
-	while (!WindowShouldClose()) {
-		UpdateMusicStream(s);
+      if (sscanf(argv[i], "%c%c%d", &d1, &d2, parse) != 3) {
+        usage();
+        return 1;
+      }
+    } else {
+      music_file = argv[i];
+    }
+  }
 
-		if (IsKeyPressed(KEY_Q) || IsKeyPressed(KEY_ESCAPE)) {
-			CloseWindow();
-		} else {
-			BeginDrawing();
-			ClearBackground(background);
+  SetConfigFlags(FLAG_WINDOW_ALWAYS_RUN);
+  InitWindow(width, height, "Raylib Audio Visualizer");
+  SetTargetFPS(fps);
 
-			if (g_frames_count != 0)
-				render(g_frames, g_frames_count);
+  cap = buffer_size;
+  g_frames = malloc(buffer_size * sizeof(uint64_t));
+  g_frames_d = malloc(buffer_size * sizeof(uint64_t));
 
-			EndDrawing();
-		}
-	}
-	DetachAudioStreamProcessor(s.stream, callback);
-	StopMusicStream(s);
+  for (unsigned int i = 0; i < cap; i++) {
+    g_frames[i] = 0;
+    g_frames_d[i] = 0;
+  }
 
-	free(g_frames);
-	free(g_frames_d);
+  if (music_file == NULL) {
+    music_file = drag_and_drop();
+    if (music_file == NULL) {
+      usage();
+      return 1;
+    }
+  }
 
-	return 0;
+  InitAudioDevice();
+  Music s = LoadMusicStream(music_file);
+  assert(s.stream.sampleSize == 32);
+  assert(s.stream.channels == 2);
+  PlayMusicStream(s);
+  AttachAudioStreamProcessor(s.stream, callback);
+
+  while (!WindowShouldClose()) {
+    UpdateMusicStream(s);
+
+    if (IsKeyPressed(KEY_Q) || IsKeyPressed(KEY_ESCAPE)) {
+      CloseWindow();
+    } else {
+      BeginDrawing();
+      ClearBackground(background);
+
+      if (g_frames_count != 0) render(g_frames, g_frames_count);
+
+      EndDrawing();
+    }
+  }
+  DetachAudioStreamProcessor(s.stream, callback);
+  StopMusicStream(s);
+
+  free(g_frames);
+  free(g_frames_d);
+
+  return 0;
 }
