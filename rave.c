@@ -5,12 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint64_t *g_frames;
-uint64_t *g_frames_d;
-uint64_t *render_lock = NULL;
-uint64_t *callback_lock = NULL;
-unsigned int cap;
-int g_frames_count = 0;
+volatile uint64_t *g_frames;
+volatile uint64_t *g_frames_d;
+volatile unsigned int cap;
+volatile int g_frames_count = 0;
 
 /* Black */
 static const Color background = CLITERAL(Color){0x00, 0x00, 0x00, 0xff};
@@ -21,36 +19,32 @@ static const Color foreground = CLITERAL(Color){0xff, 0xff, 0xff, 0xff};
 void callback(void *buffer, unsigned int frames) {
   if (frames == 0) return;
 
-  while (render_lock == g_frames_d);
-  callback_lock = g_frames_d;
-
   if (cap - g_frames_count >= frames) {
-    memcpy(g_frames_d, g_frames, g_frames_count * sizeof(uint64_t));
-    memcpy(g_frames_d + g_frames_count, buffer, frames * sizeof(uint64_t));
+    memcpy((void *)g_frames_d, (void *)g_frames,
+           g_frames_count * sizeof(uint64_t));
+    memcpy((void *)(g_frames_d + g_frames_count), buffer,
+           frames * sizeof(uint64_t));
     g_frames_count += frames;
   } else if (cap >= frames) {
-    memcpy(g_frames_d, g_frames + frames, (cap - frames) * sizeof(uint64_t));
-    memcpy(g_frames_d + (cap - frames), buffer, frames * sizeof(uint64_t));
+    memcpy((void *)g_frames_d, (void *)(g_frames + frames),
+           (cap - frames) * sizeof(uint64_t));
+    memcpy((void *)(g_frames_d + (cap - frames)), buffer,
+           frames * sizeof(uint64_t));
   } else {
-    memcpy(g_frames_d, buffer, cap * sizeof(uint64_t));
+    memcpy((void *)g_frames_d, buffer, cap * sizeof(uint64_t));
     g_frames_count = cap;
   }
 
-  uint64_t *tmp = g_frames;
+  volatile uint64_t *tmp = g_frames;
   g_frames = g_frames_d;
   g_frames_d = tmp;
-
-  callback_lock = NULL;
 }
 
-void render(uint64_t *buf, int fcount) {
+void render(volatile uint64_t *buf, int fcount) {
   int width = GetRenderWidth();
   int height = GetRenderHeight();
 
   float w = (((float)width) / (float)fcount);
-
-  while (callback_lock == buf);
-  render_lock = buf;
 
   for (int i = 0; i < (fcount * 2); i++) {
     float sample = ((float *)buf)[i];
@@ -65,8 +59,6 @@ void render(uint64_t *buf, int fcount) {
                     foreground);
     }
   }
-
-  render_lock = NULL;
 }
 
 void usage(void) {
@@ -174,8 +166,8 @@ int main(int argc, char *argv[]) {
   DetachAudioStreamProcessor(s.stream, callback);
   StopMusicStream(s);
 
-  free(g_frames);
-  free(g_frames_d);
+  free((void *)g_frames);
+  free((void *)g_frames_d);
 
   return 0;
 }

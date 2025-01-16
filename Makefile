@@ -1,7 +1,6 @@
 CC = clang
-CFLAGS = -Wall -Wextra -pedantic -std=c99
+CFLAGS = -g -Wall -Wextra -pedantic -std=c99
 CLIBS = -lX11 -lGL -lm -lpthread -ldl
-RAYLIB = /usr/local/lib/libraylib.a
 
 rave: rave.c
-	$(CC) $(CFLAGS) $^ $(RAYLIB) $(CLIBS) -o $@
+	$(CC) $(CFLAGS) `pkg-config --cflags raylib` $^ `pkg-config --libs raylib` -o $@
